@@ -9,9 +9,9 @@
     using System.Reflection;
     using System.Text;
     using System.Text.RegularExpressions;
+
 #if NET4
     using System.ComponentModel.DataAnnotations;
-
 #endif
 
     internal class XLCell : IXLCell, IXLStylized
@@ -571,7 +571,7 @@
                         else
                         {
                             var fieldInfo = m.GetType().GetFields();
-                            var propertyInfo = m.GetType().GetProperties();
+                            var propertyInfo = SortProperties<T>(m);
                             if (!hasTitles)
                             {
                                 foreach (var info in fieldInfo)
@@ -642,6 +642,17 @@
             return null;
         }
 
+        private static IEnumerable<PropertyInfo> SortProperties<T>(object m)
+        {
+            var propertyInfo = m.GetType().GetProperties().Select(prop => prop);
+#if NET4
+            propertyInfo =
+              propertyInfo.OrderBy(
+                  p => p.GetCustomAttributes(typeof(DisplayAttribute), true).Cast<DisplayAttribute>().Select(a => a.GetOrder())
+                  .FirstOrDefault());
+#endif
+            return propertyInfo;
+        }
 
         public IXLTable InsertTable(DataTable data)
         {
